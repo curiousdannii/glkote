@@ -412,11 +412,13 @@ function update() {
             switch (win.type) {
             case Const.wintype_TextBuffer:
                 obj.type = 'buffer';
+                obj.stylehints = win.stylehints
                 break;
             case Const.wintype_TextGrid:
                 obj.type = 'grid';
                 obj.gridwidth = win.gridwidth;
                 obj.gridheight = win.gridheight;
+                obj.stylehints = win.stylehints
                 break;
             case Const.wintype_Graphics:
                 obj.type = 'graphics';
@@ -4241,6 +4243,11 @@ function glk_window_open(splitwin, method, size, wintype, rock) {
         newwin.content = [];
         newwin.clearcontent = false;
         newwin.reserve = []; /* autosave of recent content */
+        newwin.stylehints = []
+        for (let i = 0; i < Const.style_NUMSTYLES; i++)
+        {
+            newwin.stylehints.push(Object.assign({}, stylehints.buffer[i]))
+        }
         break;
     case Const.wintype_TextGrid:
         /* lines is a list of line objects. A line looks like
@@ -4251,6 +4258,11 @@ function glk_window_open(splitwin, method, size, wintype, rock) {
         newwin.lines = [];
         newwin.cursorx = 0;
         newwin.cursory = 0;
+        newwin.stylehints = []
+        for (let i = 0; i < Const.style_NUMSTYLES; i++)
+        {
+            newwin.stylehints.push(Object.assign({}, stylehints.grid[i]))
+        }
         break;
     case Const.wintype_Graphics:
         if (!has_canvas) {
@@ -5088,12 +5100,103 @@ function glk_char_to_upper(val) {
     return val;
 }
 
-/* Style hints are not supported. We will use the new style system. */
-function glk_stylehint_set(wintype, styl, hint, value) { }
-function glk_stylehint_clear(wintype, styl, hint) { }
+/* Style hints */
+
+var stylehints = {
+    buffer: [],
+    grid: [],
+}
+
+for (let i = 0; i < Const.style_NUMSTYLES; i++)
+{
+    stylehints.buffer.push({})
+    stylehints.grid.push({})
+}
+
+var stylehint_properties = ['margin-left', 'text-indent', 'text-align', 'font-size', 'font-weight', 'font-style', 'font-family', 'color', 'background-color', 'reverse']
+
+function glk_stylehint_set(wintype, style, hint, value) {
+    var stylevalue
+    var justifications = ['left', 'justify', 'center', 'right']
+    var weights = ['lighter', 'normal', 'bold']
+
+    if (hint === Const.stylehint_Indentation)
+    {
+        stylevalue = value + 'em'
+    }
+
+    if (hint === Const.stylehint_ParaIndentation)
+    {
+        stylevalue = value + 'em'
+    }
+
+    if (hint === Const.stylehint_Justification)
+    {
+        stylevalue = justifications[value]
+    }
+
+    if (hint === Const.stylehint_Size)
+    {
+        stylevalue = (1 + value * 0.1) + 'em'
+    }
+
+    if (hint === Const.stylehint_Weight)
+    {
+        stylevalue = weights[value + 1]
+    }
+
+    if (hint === Const.stylehint_Oblique)
+    {
+        stylevalue = value ? 'italic': 'normal'
+    }
+
+    if (hint === Const.stylehint_Proportional)
+    {
+        stylevalue = value ? 'var(--glkote-mono-family)' : 'var(--glkote-prop-family)'
+    }
+
+    if (hint === Const.stylehint_TextColor)
+    {
+        stylevalue = '#' + ('000000' + value.toString(16)).slice(-6)
+    }
+
+    if (hint === Const.stylehint_BackColor)
+    {
+        stylevalue = '#' + ('000000' + value.toString(16)).slice(-6)
+    }
+
+    if (hint === Const.stylehint_ReverseColor)
+    {
+        stylevalue = value
+    }
+
+    if (wintype === Const.wintype_AllTypes || wintype === Const.wintype_TextBuffer)
+    {
+        stylehints.buffer[style][stylehint_properties[hint]] = stylevalue
+    }
+
+    if (wintype === Const.wintype_AllTypes || wintype === Const.wintype_TextGrid)
+    {
+        stylehints.grid[style][stylehint_properties[hint]] = stylevalue
+    }
+}
+
+function glk_stylehint_clear(wintype, style, hint) {
+    if (wintype === Const.wintype_AllTypes || wintype === Const.wintype_TextBuffer)
+    {
+        delete stylehints.buffer[style][stylehint_properties[hint]]
+    }
+
+    if (wintype === Const.wintype_AllTypes || wintype === Const.wintype_TextGrid)
+    {
+        delete stylehints.grid[style][stylehint_properties[hint]]
+    }
+}
+
 function glk_style_distinguish(win, styl1, styl2) {
     return 0;
 }
+
 function glk_style_measure(win, styl, hint, resultref) {
     if (resultref)
         resultref.set_value(0);

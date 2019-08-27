@@ -130,6 +130,20 @@ var recording_context = {};
 */
 var image_cache = {};
 
+const StyleNames = [
+  'normal',
+  'emphasized',
+  'preformatted',
+  'header',
+  'subheader',
+  'alert',
+  'note',
+  'blockquote',
+  'input',
+  'user1',
+  'user2',
+]
+
 /* This function becomes GlkOte.init(). The document calls this to begin
    the game. The simplest way to do this is to give the <body> tag an
    onLoad="GlkOte.init();" attribute.
@@ -849,6 +863,7 @@ function accept_one_window(arg) {
 
   win = windowdic[arg.id];
   if (win == null) {
+    const windowid = 'window' + arg.id
     /* The window must be created. */
     win = { id: arg.id, type: arg.type, rock: arg.rock };
     windowdic[arg.id] = win;
@@ -861,7 +876,7 @@ function accept_one_window(arg) {
       typeclass = 'GraphicsWindow';
     var rockclass = 'WindowRock_' + arg.rock;
     frameel = $('<div>',
-      { id: 'window'+arg.id,
+      { id: windowid,
         'class': 'WindowFrame ' + typeclass + ' ' + rockclass });
     frameel.data('winid', arg.id);
     frameel.on('mousedown', arg.id, evhan_window_mousedown);
@@ -889,6 +904,50 @@ function accept_one_window(arg) {
     win.coords = { left:null, top:null, right:null, bottom:null };
     win.history = new Array();
     win.historypos = 0;
+
+    // Styles
+    if (win.type === 'buffer' || win.type === 'grid')
+    {
+      win.stylehints = arg.stylehints
+      const css_rules = []
+      for (let style_number = 0; style_number < 11; style_number++)
+      {
+        const stylehints = arg.stylehints[style_number]
+        const css_props = []
+
+        if (stylehints.reverse)
+        {
+          const fgcolor = stylehints.color || 'var(--glkote-fgcolor)'
+          const bgcolor = stylehints['background-color'] || 'var(--glkote-bgcolor)'
+          stylehints.color = bgcolor
+          stylehints['background-color'] = fgcolor
+        }
+
+        for (const prop in stylehints)
+        {
+          if (prop !== 'reverse')
+          {
+            css_props.push(`${prop}: ${stylehints[prop]}`)
+          }
+        }
+
+        if (css_props.length) {
+          css_rules.push(`#${windowid} .Style_${StyleNames[style_number]} {${css_props.join('; ')}}`)
+        }
+
+        if (!stylehints.reverse && (stylehints.color || stylehints['background-color']))
+        {
+          const fgcolor = stylehints['background-color'] || 'var(--glkote-bgcolor)'
+          const bgcolor = stylehints.color || 'var(--glkote-fgcolor)'
+          css_rules.push(`#${windowid} .Style_${StyleNames[style_number]}.reverse {color:${fgcolor};background-color:${bgcolor}}`)
+        }
+      }
+
+      if (css_rules.length)
+      {
+        frameel.append(`<style>${css_rules.join('\n')}</style>`)
+      }
+    }
     $('#'+windowport_id, dom_context).append(frameel);
   }
   else {

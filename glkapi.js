@@ -5185,7 +5185,7 @@ function glk_stylehint_set(wintype, style, hint, value) {
 
     if (hint === Const.stylehint_Proportional)
     {
-        stylevalue = value ? 'var(--glkote-mono-family)' : 'var(--glkote-prop-family)'
+        stylevalue = value ? 'var(--glkote-prop-family)' : 'var(--glkote-mono-family)'
     }
 
     if (hint === Const.stylehint_TextColor)

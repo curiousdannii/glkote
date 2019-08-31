@@ -921,6 +921,9 @@ function restore_allstate(res)
             win.accum = [];
             win.accumstyle = win.style;
             win.accumhyperlink = win.hyperlink;
+            win.accum_fg = win.fg
+            win.accum_bg = win.bg
+            win.accum_reverse = win.reverse
             win.content = obj.reserve.slice(0);
             win.clearcontent = false;
             win.reserve = [];
@@ -1120,6 +1123,7 @@ var Const = {
     gestalt_Sound2 : 21,
     gestalt_ResourceStream : 22,
     gestalt_GraphicsCharInput : 23,
+    gestalt_GarglkText: 0x1100,
 
     keycode_Unknown  : 0xffffffff,
     keycode_Left     : 0xfffffffe,
@@ -1233,7 +1237,10 @@ var Const = {
     imagealign_InlineDown : 2,
     imagealign_InlineCenter : 3,
     imagealign_MarginLeft : 4,
-    imagealign_MarginRight : 5
+    imagealign_MarginRight : 5,
+
+    zcolor_Default: -1,
+    zcolor_Current: -2,
 
 };
 
@@ -2826,8 +2833,13 @@ function gli_window_put_string(win, val) {
     switch (win.type) {
     case Const.wintype_TextBuffer:
         if (win.style != win.accumstyle
-            || win.hyperlink != win.accumhyperlink)
+            || win.hyperlink != win.accumhyperlink
+            || win.fg != win.accum_fg
+            || win.bg != win.accum_bg
+            || win.reverse != win.accum_reverse)
+        {
             gli_window_buffer_deaccumulate(win);
+        }
         win.accum.push(val);
         break;
     case Const.wintype_TextGrid:
@@ -2933,12 +2945,32 @@ function gli_window_buffer_deaccumulate(win) {
                 }
             }
             if (arr !== undefined) {
-                if (!win.accumhyperlink) {
+                if (!win.accumhyperlink && win.fg == null && win.bg == null && win.reverse == null) {
                     arr.push(stylename);
                     arr.push(ls[ix]);
                 }
                 else {
-                    arr.push({ style:stylename, text:ls[ix], hyperlink:win.accumhyperlink });
+                    const content = {
+                        style: stylename,
+                        text: ls[ix],
+                    }
+                    if (win.accumhyperlink)
+                    {
+                        content.hyperlink = win.accumhyperlink
+                    }
+                    if (win.accum_fg != null)
+                    {
+                        content.fg = win.accum_fg
+                    }
+                    if (win.accum_bg != null)
+                    {
+                        content.bg = win.accum_bg
+                    }
+                    if (win.reverse)
+                    {
+                        content.reverse = win.accum_reverse
+                    }
+                    arr.push(content)
                 }
             }
         }
@@ -2947,6 +2979,9 @@ function gli_window_buffer_deaccumulate(win) {
     win.accum.length = 0;
     win.accumstyle = win.style;
     win.accumhyperlink = win.hyperlink;
+    win.accum_fg = win.fg
+    win.accum_bg = win.bg
+    win.accum_reverse = win.reverse
 }
 
 /* Add a special object onto a buffer window update. This resets the
@@ -4152,6 +4187,8 @@ function glk_gestalt_ext(sel, val, arr) {
     case 23: // gestalt_GraphicsCharInput
         return 0;
 
+    case 0x1100: // gestalt_GarglkText
+        return 0
     }
 
     if (option_glk_gestalt_hook) {
@@ -4240,6 +4277,9 @@ function glk_window_open(splitwin, method, size, wintype, rock) {
         newwin.accum = [];
         newwin.accumstyle = null;
         newwin.accumhyperlink = 0;
+        newwin.accum_fg = null
+        newwin.accum_bg = null
+        newwin.accum_reverse = null
         newwin.content = [];
         newwin.clearcontent = false;
         newwin.reserve = []; /* autosave of recent content */
@@ -4535,6 +4575,9 @@ function glk_window_clear(win) {
         win.accum.length = 0;
         win.accumstyle = null;
         win.accumhyperlink = 0;
+        win.accum_fg = null
+        win.accum_bg = null
+        win.accum_reverse = null
         win.content.length = 0;
         win.clearcontent = true;
         break;
@@ -5201,6 +5244,59 @@ function glk_style_measure(win, styl, hint, resultref) {
     if (resultref)
         resultref.set_value(0);
     return 0;
+}
+
+// Gargolye text formatting functions
+
+function garglk_set_zcolors(fg, bg)
+{
+    garglk_set_zcolors_stream(gli_currentstr, fg, bg)
+}
+
+function garglk_set_zcolors_stream(str, fg, bg)
+{
+    if (!str || !str.writable)
+    {
+        throw('garglk_set_zcolors: invalid stream')
+    }
+
+    if (str.type == strtype_Window)
+    {
+        if (fg !== -2)
+        {
+            str.win.fg = fg === -1 ? null : fg
+        }
+        if (bg !== -2)
+        {
+            str.win.fg = bg === -1 ? null : bg
+        }
+        if (str.win.echostr)
+        {
+            garglk_set_zcolors_stream(str.win.echostr, fg, bg)
+        }
+    }
+}
+
+function garglk_set_reversevideo(reverse)
+{
+    garglk_set_reversevideo_stream(gli_currentstr, reverse)
+}
+
+function garglk_set_reversevideo_stream(str, reverse)
+{
+    if (!str || !str.writable)
+    {
+        throw('garglk_set_reversevideo: invalid stream')
+    }
+
+    if (str.type == strtype_Window)
+    {
+        str.win.reverse = reverse || null
+        if (str.win.echostr)
+        {
+            garglk_set_reversevideo_stream(str.win.echostr, reverse)
+        }
+    }
 }
 
 function glk_select(eventref) {
@@ -6419,7 +6515,11 @@ return {
     glk_date_to_simple_time_utc : glk_date_to_simple_time_utc,
     glk_date_to_simple_time_local : glk_date_to_simple_time_local,
     glk_stream_open_resource : glk_stream_open_resource,
-    glk_stream_open_resource_uni : glk_stream_open_resource_uni
+    glk_stream_open_resource_uni : glk_stream_open_resource_uni,
+    garglk_set_zcolors: garglk_set_zcolors,
+    garglk_set_zcolors_stream: garglk_set_zcolors_stream,
+    garglk_set_reversevideo: garglk_set_reversevideo,
+    garglk_set_reversevideo_stream: garglk_set_reversevideo_stream,
 };
 
 }();

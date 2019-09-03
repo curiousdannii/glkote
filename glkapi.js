@@ -2980,7 +2980,7 @@ function gli_window_buffer_deaccumulate(win) {
                 }
             }
             if (arr !== undefined) {
-                if (!win.accumhyperlink && win.fg == null && win.bg == null && win.reverse == null) {
+                if (!win.accumhyperlink && !win.accum_fg && !win.accum_bg && !win.accum_reverse) {
                     arr.push(stylename);
                     arr.push(ls[ix]);
                 }
@@ -2993,17 +2993,17 @@ function gli_window_buffer_deaccumulate(win) {
                     {
                         content.hyperlink = win.accumhyperlink
                     }
-                    if (win.accum_fg != null)
+                    if (win.accum_fg)
                     {
                         content.fg = win.accum_fg
                     }
-                    if (win.accum_bg != null)
+                    if (win.accum_bg)
                     {
                         content.bg = win.accum_bg
                     }
-                    if (win.reverse)
+                    if (win.accum_reverse)
                     {
-                        content.reverse = win.accum_reverse
+                        content.reverse = 1
                     }
                     arr.push(content)
                 }
@@ -4223,7 +4223,7 @@ function glk_gestalt_ext(sel, val, arr) {
         return 0;
 
     case 0x1100: // gestalt_GarglkText
-        return 0
+        return support.garglktext || 0
     }
 
     if (option_glk_gestalt_hook) {
@@ -5297,11 +5297,11 @@ function garglk_set_zcolors_stream(str, fg, bg)
     {
         if (fg !== -2)
         {
-            str.win.fg = fg === -1 ? null : fg
+            str.win.fg = fg === -1 ? null : '#' + ('000000' + fg.toString(16)).slice(-6)
         }
         if (bg !== -2)
         {
-            str.win.fg = bg === -1 ? null : bg
+            str.win.bg = bg === -1 ? null : '#' + ('000000' + bg.toString(16)).slice(-6)
         }
         if (str.win.echostr)
         {

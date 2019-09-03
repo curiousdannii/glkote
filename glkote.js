@@ -141,6 +141,20 @@ const StyleNames = [
   'user2',
 ]
 
+const StyleNamesToCode = {
+  normal: 0,
+  emphasized: 1,
+  preformatted: 2,
+  header: 3,
+  subheader: 4,
+  alert: 5,
+  note: 6,
+  blockquote: 7,
+  input: 8,
+  user1: 9,
+  user2: 10,
+}
+
 /* This function becomes GlkOte.init(). The document calls this to begin
    the game. The simplest way to do this is to give the <body> tag an
    onLoad="GlkOte.init();" attribute.
@@ -901,33 +915,33 @@ function accept_one_window(arg) {
       for (let style_number = 0; style_number < 11; style_number++)
       {
         const stylehints = arg.stylehints[style_number]
-        const css_props = []
-
-        if (stylehints.reverse)
-        {
-          const fgcolor = stylehints.color || 'var(--glkote-fgcolor)'
-          const bgcolor = stylehints['background-color'] || 'var(--glkote-bgcolor)'
-          stylehints.color = bgcolor
-          stylehints['background-color'] = fgcolor
-        }
+        let css_props = []
 
         for (const prop in stylehints)
         {
-          if (prop !== 'reverse')
+          if (prop === 'reverse' || (prop === 'font-family' && win.type !== 'buffer'))
           {
-            css_props.push(`${prop}: ${stylehints[prop]}`)
+            continue;
           }
+          css_props.push(`${prop}: ${stylehints[prop]}`)
         }
 
         if (css_props.length) {
           css_rules.push(`#${windowid} .Style_${StyleNames[style_number]} {${css_props.join('; ')}}`)
         }
 
-        if (!stylehints.reverse && (stylehints.color || stylehints['background-color']))
+        if (stylehints.color || stylehints['background-color'])
         {
-          const fgcolor = stylehints['background-color'] || 'var(--glkote-bgcolor)'
-          const bgcolor = stylehints.color || 'var(--glkote-fgcolor)'
-          css_rules.push(`#${windowid} .Style_${StyleNames[style_number]}.reverse {color:${fgcolor};background-color:${bgcolor}}`)
+          let css_props = []
+          if (stylehints.color)
+          {
+            css_props.push(`background-color: ${stylehints.color}`)
+          }
+          if (stylehints['background-color'])
+          {
+            css_props.push(`color: ${stylehints['background-color']}`)
+          }
+          css_rules.push(`#${windowid} .Style_${StyleNames[style_number]}.reverse {${css_props.join('; ')}}`)
         }
       }
 
@@ -1133,12 +1147,17 @@ function accept_one_content(arg) {
         for (sx=0; sx<content.length; sx++) {
           var rdesc = content[sx];
           var rstyle, rtext, rlink;
+          var fg = null, bg = null, reverse = 0
+          var className, css_props = {}
           if (jQuery.type(rdesc) === 'object') {
             if (rdesc.special !== undefined)
               continue;
             rstyle = rdesc.style;
             rtext = rdesc.text;
             rlink = rdesc.hyperlink;
+            fg = rdesc.fg
+            bg = rdesc.bg
+            reverse = rdesc.reverse
           }
           else {
             rstyle = rdesc;
@@ -1146,8 +1165,29 @@ function accept_one_content(arg) {
             rtext = content[sx];
             rlink = undefined;
           }
+          reverse = reverse || win.stylehints[StyleNamesToCode[rstyle]].reverse
+
+          classname = 'Style_' + rstyle
+          if (reverse)
+          {
+            classname += ' reverse'
+          }
           var el = $('<span>',
-            { 'class': 'Style_' + rstyle } );
+            { 'class': classname } );
+
+          if (fg || bg)
+          {
+            if (fg)
+            {
+              css_props[reverse ? 'background-color' : 'color'] = fg
+            }
+            if (bg)
+            {
+              css_props[reverse ? 'color' : 'background-color'] = bg
+            }
+            el.css(css_props)
+          }
+
           if (rlink == undefined) {
             insert_text_detecting(el, rtext);
           }
@@ -1234,6 +1274,8 @@ function accept_one_content(arg) {
       for (sx=0; sx<content.length; sx++) {
         var rdesc = content[sx];
         var rstyle, rtext, rlink;
+        var fg = null, bg = null, reverse = 0
+        var className, css_props = {}
         if (jQuery.type(rdesc) === 'object') {
           if (rdesc.special !== undefined) {
             if (rdesc.special == 'image') {
@@ -1290,6 +1332,9 @@ function accept_one_content(arg) {
           rstyle = rdesc.style;
           rtext = rdesc.text;
           rlink = rdesc.hyperlink;
+          fg = rdesc.fg
+          bg = rdesc.bg
+          reverse = rdesc.reverse
         }
         else {
           rstyle = rdesc;
@@ -1297,8 +1342,29 @@ function accept_one_content(arg) {
           rtext = content[sx];
           rlink = undefined;
         }
+        reverse = reverse || win.stylehints[StyleNamesToCode[rstyle]].reverse
+
+        classname = 'Style_' + rstyle
+        if (reverse)
+        {
+          classname += ' reverse'
+        }
         var el = $('<span>',
-          { 'class': 'Style_' + rstyle } );
+          { 'class': classname } );
+
+        if (fg || bg)
+        {
+          if (fg)
+          {
+            css_props[reverse ? 'background-color' : 'color'] = fg
+          }
+          if (bg)
+          {
+            css_props[reverse ? 'color' : 'background-color'] = bg
+          }
+          el.css(css_props)
+        }
+
         if (rlink == undefined) {
           insert_text_detecting(el, rtext);
         }
@@ -2168,7 +2234,7 @@ function send_response(type, win, val, val2) {
   }
   else if (type == 'init') {
     res.metrics = val;
-    res.support = ['timer', 'graphics', 'graphicswin', 'hyperlinks'];
+    res.support = ['timer', 'graphics', 'graphicswin', 'hyperlinks', 'garglktext'];
   }
   else if (type == 'arrange') {
     res.metrics = val;

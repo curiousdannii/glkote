@@ -944,6 +944,10 @@ function accept_one_window(arg) {
           css_rules.push(`#${windowid} .Style_${StyleNames[style_number]}.reverse {${css_props.join('; ')}}`)
         }
       }
+      if (arg.stylehints[0]['background-color'])
+      {
+        css_rules.push(`#${windowid} {background-color: ${arg.stylehints[0]['background-color']}}`)
+      }
 
       if (css_rules.length)
       {

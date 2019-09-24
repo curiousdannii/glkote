@@ -5297,6 +5297,8 @@ function garglk_set_zcolors_stream(str, fg, bg)
         throw('garglk_set_zcolors: invalid stream')
     }
 
+    fg = fg >> 0
+    bg = bg >> 0
     if (str.type == strtype_Window)
     {
         if (fg !== -2)

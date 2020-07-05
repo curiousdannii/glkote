@@ -1145,8 +1145,7 @@ function accept_one_content(arg) {
   if (win.type == 'grid') {
     /* Modify the given lines of the grid window (and leave the rest alone). */
     var lines = arg.lines;
-    var ix, sx;
-    for (ix=0; ix<lines.length; ix++) {
+    for (let ix=0; ix<lines.length; ix++) {
       var linearg = lines[ix];
       var linenum = linearg.line;
       var content = linearg.content;
@@ -1160,11 +1159,11 @@ function accept_one_content(arg) {
       }
       else {
         lineel.empty();
-        for (sx=0; sx<content.length; sx++) {
+        for (let sx=0; sx<content.length; sx++) {
           var rdesc = content[sx];
           var rstyle, rtext, rlink;
           var fg = null, bg = null, reverse = 0
-          var className, css_props = {}
+          const css_props = {}
           if (jQuery.type(rdesc) === 'object') {
             if (rdesc.special !== undefined)
               continue;
@@ -1183,7 +1182,7 @@ function accept_one_content(arg) {
           }
           reverse = reverse || win.stylehints[StyleNamesToCode[rstyle]].reverse
 
-          classname = 'Style_' + rstyle
+          let classname = 'Style_' + rstyle
           if (reverse)
           {
             classname += ' reverse'
@@ -1290,7 +1289,7 @@ function accept_one_content(arg) {
         const  rdesc = content[sx];
         let rstyle, rtext, rlink;
         let fg = null, bg = null, reverse = 0
-        let className, css_props = {}
+        const css_props = {}
         if (jQuery.type(rdesc) === 'object') {
           if (rdesc.special !== undefined) {
             if (rdesc.special == 'image') {
@@ -1359,12 +1358,12 @@ function accept_one_content(arg) {
         }
         reverse = reverse || win.stylehints[StyleNamesToCode[rstyle]].reverse
 
-        classname = 'Style_' + rstyle
+        let classname = 'Style_' + rstyle
         if (reverse)
         {
           classname += ' reverse'
         }
-        var el = $('<span>',
+        let el = $('<span>',
           { 'class': classname } );
 
         if (fg || bg)
@@ -1410,7 +1409,7 @@ function accept_one_content(arg) {
         win.pagefrommark -= offtop;
         if (win.pagefrommark < 0)
           win.pagefrommark = 0;
-        for (ix=0; ix<totrim; ix++) {
+        for (let ix=0; ix<totrim; ix++) {
           $(parals.get(ix)).remove();
         }
       }

@@ -5269,7 +5269,7 @@ function glk_stylehint_clear(wintype, style, hint) {
     }
 }
 
-function glk_style_distinguish(win, styl1, styl2) {
+function glk_style_distinguish(/*win, styl1, styl2*/) {
     return 0;
 }
 

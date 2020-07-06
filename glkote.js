@@ -1381,7 +1381,10 @@ function accept_one_content(arg) {
         if (win.pagefrommark < 0)
           win.pagefrommark = 0;
         for (let ix=0; ix<totrim; ix++) {
-          $(parals.get(ix)).remove();
+          const par = parals[ix]
+          if (par.tagName !== 'STYLE') {
+            $(par).remove();
+          }
         }
       }
     }

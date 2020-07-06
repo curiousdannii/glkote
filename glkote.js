@@ -1122,8 +1122,9 @@ function accept_one_content(arg) {
           var rdesc = content[sx];
           var rstyle, rtext, rlink;
           var fg = null, bg = null, reverse = 0
-          const css_props = {}
           if (jQuery.type(rdesc) === 'object') {
+            // Store the last run description for setting styles on the input
+            win.lastrdesc = rdesc
             if (rdesc.special !== undefined)
               continue;
             rstyle = rdesc.style;
@@ -1151,6 +1152,7 @@ function accept_one_content(arg) {
 
           if (fg || bg)
           {
+            const css_props = {}
             if (fg)
             {
               css_props[reverse ? 'background-color' : 'color'] = fg
@@ -1199,6 +1201,7 @@ function accept_one_content(arg) {
       win.frameel.empty();
       win.topunseen = 0;
       win.pagefrommark = 0;
+      win.lastrdesc = null
       if (win.stylehints) {
         if (arg['background-color'])
         {
@@ -1255,8 +1258,9 @@ function accept_one_content(arg) {
         const  rdesc = content[sx];
         let rstyle, rtext, rlink;
         let fg = null, bg = null, reverse = 0
-        const css_props = {}
         if (jQuery.type(rdesc) === 'object') {
+          // Store the last run description for setting styles on the input
+          win.lastrdesc = rdesc
           if (rdesc.special !== undefined) {
             if (rdesc.special == 'image') {
               /* This is not as restrictive as the Glk spec says it should
@@ -1334,6 +1338,7 @@ function accept_one_content(arg) {
 
         if (fg || bg)
         {
+          const css_props = {}
           if (fg)
           {
             css_props[reverse ? 'background-color' : 'color'] = fg
@@ -1404,6 +1409,21 @@ function accept_one_content(arg) {
           width = 1;
         inputel.css({ position: 'absolute',
           left: '0px', top: '0px', width: width+'px' });
+
+        // Set colours and reverse from last input
+        if (win.lastrdesc)
+        {
+          const lastrdesc = win.lastrdesc
+          inputel.toggleClass('reverse', !!lastrdesc.reverse)
+          if (lastrdesc.fg || lastrdesc.bg)
+          {
+            const css_props = {}
+            css_props[lastrdesc.reverse ? 'background-color' : 'color'] = lastrdesc.fg || ''
+            css_props[lastrdesc.reverse ? 'color' : 'background-color'] = lastrdesc.bg || ''
+            inputel.css(css_props)
+          }
+        }
+
         cursel.append(inputel);
       }
     }
@@ -1544,6 +1564,20 @@ function accept_inputset(arg) {
       win.inputel = inputel;
       win.historypos = win.history.length;
       win.needscroll = true;
+
+      // Set colours and reverse from last input
+      if (win.lastrdesc)
+      {
+        const lastrdesc = win.lastrdesc
+        inputel.toggleClass('reverse', !!lastrdesc.reverse)
+        if (lastrdesc.fg || lastrdesc.bg)
+        {
+          const css_props = {}
+          css_props[lastrdesc.reverse ? 'background-color' : 'color'] = lastrdesc.fg || ''
+          css_props[lastrdesc.reverse ? 'color' : 'background-color'] = lastrdesc.bg || ''
+          inputel.css(css_props)
+        }
+      }
     }
 
     if (win.type == 'grid') {

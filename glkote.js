@@ -920,51 +920,10 @@ function accept_one_window(arg) {
     win.historypos = 0;
 
     // Styles
-    if (win.type === 'buffer' || win.type === 'grid')
+    if (arg.stylehints)
     {
       win.stylehints = arg.stylehints
-      const css_rules = []
-      for (let style_number = 0; style_number < 11; style_number++)
-      {
-        const stylehints = arg.stylehints[style_number]
-        let css_props = []
-
-        for (const prop in stylehints)
-        {
-          if (prop === 'reverse' || (prop === 'font-family' && win.type !== 'buffer'))
-          {
-            continue;
-          }
-          css_props.push(`${prop}: ${stylehints[prop]}`)
-        }
-
-        if (css_props.length) {
-          css_rules.push(`#${windowid} .Style_${StyleNames[style_number]} {${css_props.join('; ')}}`)
-        }
-
-        if (stylehints.color || stylehints['background-color'])
-        {
-          let css_props = []
-          if (stylehints.color)
-          {
-            css_props.push(`background-color: ${stylehints.color}`)
-          }
-          if (stylehints['background-color'])
-          {
-            css_props.push(`color: ${stylehints['background-color']}`)
-          }
-          css_rules.push(`#${windowid} .Style_${StyleNames[style_number]}.reverse {${css_props.join('; ')}}`)
-        }
-      }
-      if (arg.stylehints[0]['background-color'])
-      {
-        css_rules.push(`#${windowid} {background-color: ${arg.stylehints[0]['background-color']}}`)
-      }
-
-      if (css_rules.length)
-      {
-        frameel.append(`<style>${css_rules.join('\n')}</style>`)
-      }
+      add_window_styles(win, frameel)
     }
     $('#'+windowport_id, dom_context).append(frameel);
   }
@@ -1240,6 +1199,9 @@ function accept_one_content(arg) {
       win.frameel.empty();
       win.topunseen = 0;
       win.pagefrommark = 0;
+      if (win.stylehints) {
+        add_window_styles(win, win.frameel);
+      }
     }
 
     /* Accept a missing text field as doing nothing. */
@@ -1746,6 +1708,53 @@ function readjust_paging_focus(canfocus) {
         win.inputel.focus();
       }
     }
+  }
+}
+
+// Convert stylehints into CSS and add them to a window
+function add_window_styles(win, frameel) {
+  const windowid = 'window' + win.id
+  const css_rules = []
+  for (let style_number = 0; style_number < 11; style_number++)
+  {
+    const stylehints = win.stylehints[style_number]
+    let css_props = []
+
+    for (const prop in stylehints)
+    {
+      if (prop === 'reverse' || (prop === 'font-family' && win.type !== 'buffer'))
+      {
+        continue;
+      }
+      css_props.push(`${prop}: ${stylehints[prop]}`)
+    }
+
+    if (css_props.length) {
+      css_rules.push(`#${windowid} .Style_${StyleNames[style_number]} {${css_props.join('; ')}}`)
+    }
+
+    if (stylehints.color || stylehints['background-color'])
+    {
+      let css_props = []
+      if (stylehints.color)
+      {
+        css_props.push(`background-color: ${stylehints.color}`)
+      }
+      if (stylehints['background-color'])
+      {
+        css_props.push(`color: ${stylehints['background-color']}`)
+      }
+      css_rules.push(`#${windowid} .Style_${StyleNames[style_number]}.reverse {${css_props.join('; ')}}`)
+    }
+  }
+  if (win.stylehints[0]['background-color'])
+  {
+    css_rules.push(`#${windowid} {background-color: ${win.stylehints[0]['background-color']}}`)
+  }
+
+  if (css_rules.length)
+  {
+    frameel.append(`<style>${css_rules.join('\n')}</style>`)
   }
 }
 

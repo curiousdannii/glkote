@@ -1162,7 +1162,7 @@ function accept_one_content(arg) {
             el.css(css_props)
           }
 
-          if (rlink == undefined) {
+          if (!rlink) {
             insert_text_detecting(el, rtext);
           }
           else {
@@ -1200,6 +1200,10 @@ function accept_one_content(arg) {
       win.topunseen = 0;
       win.pagefrommark = 0;
       if (win.stylehints) {
+        if (arg['background-color'])
+        {
+          win.stylehints[0]['background-color'] = arg['background-color']
+        }
         add_window_styles(win, win.frameel);
       }
     }
@@ -1341,7 +1345,7 @@ function accept_one_content(arg) {
           el.css(css_props)
         }
 
-        if (rlink == undefined) {
+        if (!rlink) {
           insert_text_detecting(el, rtext);
         }
         else {

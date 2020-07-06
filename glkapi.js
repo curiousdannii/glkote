@@ -432,7 +432,7 @@ function update() {
     var contentarray = null;
     var inputarray = null;
     var win, obj, robj, useobj, lineobj, ls, val, ix, cx;
-    var initial, lastpos, laststyle, lasthyperlink;
+    var initial, lastpos;
 
     if (geometry_changed) {
         geometry_changed = false;
@@ -485,6 +485,10 @@ function update() {
             }
             if (win.clearcontent) {
                 obj.clear = true;
+                if (win.bg)
+                {
+                    obj['background-color'] = win.bg;
+                }
                 win.clearcontent = false;
                 useobj = true;
                 if (!obj.text) {
@@ -513,21 +517,34 @@ function update() {
                 ls = [];
                 lastpos = 0;
                 for (cx=0; cx<win.gridwidth; ) {
-                    laststyle = lineobj.styles[cx];
-                    lasthyperlink = lineobj.hyperlinks[cx];
+                    const laststyle = lineobj.styles[cx];
+                    const lasthyperlink = lineobj.hyperlinks[cx];
+                    const lastfg = lineobj.fgs[cx];
+                    const lastbg = lineobj.bgs[cx];
+                    const lastreverse = lineobj.reverses[cx];
                     for (; cx<win.gridwidth 
-                             && lineobj.styles[cx] == laststyle
-                             && lineobj.hyperlinks[cx] == lasthyperlink; 
+                             && lineobj.styles[cx] === laststyle
+                             && lineobj.hyperlinks[cx] === lasthyperlink
+                             && lineobj.fgs[cx] === lastfg
+                             && lineobj.bgs[cx] === lastbg
+                             && lineobj.reverses[cx] === lastreverse;
                          cx++) {
                              continue;
                          }
                     if (lastpos < cx) {
-                        if (!lasthyperlink) {
+                        if (!lasthyperlink && lastfg == null && lastbg == null && !lastreverse) {
                             ls.push(StyleNameMap[laststyle]);
                             ls.push(lineobj.chars.slice(lastpos, cx).join(''));
                         }
                         else {
-                            robj = { style:StyleNameMap[laststyle], text:lineobj.chars.slice(lastpos, cx).join(''), hyperlink:lasthyperlink };
+                            robj = {
+                                style: StyleNameMap[laststyle],
+                                text: lineobj.chars.slice(lastpos, cx).join(''),
+                                hyperlink: lasthyperlink,
+                                fg: lastfg,
+                                bg: lastbg,
+                                reverse: lastreverse,
+                            };
                             ls.push(robj);
                         }
                         lastpos = cx;
@@ -747,7 +764,10 @@ function save_allstate() {
                 obj.lines.push({
                         chars: ln.chars.slice(0),
                         styles: ln.styles.slice(0),
-                        hyperlinks: ln.hyperlinks.slice(0)
+                        hyperlinks: ln.hyperlinks.slice(0),
+                        fgs: ln.fgs.slice(0),
+                        bgs: ln.bgs.slice(0),
+                        reverses: ln.reverses.slice(0),
                     });
             }
             obj.cursorx = win.cursorx;
@@ -975,7 +995,10 @@ function restore_allstate(res)
                         dirty: true,
                         chars: ln.chars.slice(0),
                         styles: ln.styles.slice(0),
-                        hyperlinks: ln.hyperlinks.slice(0)
+                        hyperlinks: ln.hyperlinks.slice(0),
+                        fgs: ln.fgs.slice(0),
+                        bgs: ln.bgs.slice(0),
+                        reverses: ln.reverses.slice(0),
                     });
             }
             win.cursorx = obj.cursorx;
@@ -2906,6 +2929,9 @@ function gli_window_put_string(win, val) {
             lineobj.chars[win.cursorx] = ch;
             lineobj.styles[win.cursorx] = win.style;
             lineobj.hyperlinks[win.cursorx] = win.hyperlink;
+            lineobj.fgs[win.cursorx] = win.fg;
+            lineobj.bgs[win.cursorx] = win.bg;
+            lineobj.reverses[win.cursorx] = win.reverse;
 
             win.cursorx++;
             /* We can leave the cursor outside the window, since it will be
@@ -3128,7 +3154,7 @@ function gli_window_rearrange(win, box) {
         }
         else if (oldheight < win.gridheight) {
             for (ix=oldheight; ix<win.gridheight; ix++) {
-                win.lines[ix] = { chars:[], styles:[], hyperlinks:[], 
+                win.lines[ix] = { chars:[], styles:[], hyperlinks:[], fgs:[], bgs:[], reverses:[],
                                   dirty:true };
             }
         }
@@ -3140,6 +3166,9 @@ function gli_window_rearrange(win, box) {
                 lineobj.chars.length = win.gridwidth;
                 lineobj.styles.length = win.gridwidth;
                 lineobj.hyperlinks.length = win.gridwidth;
+                lineobj.fgs.length = win.gridwith;
+                lineobj.bgs.length = win.gridwith;
+                lineobj.reverses.length = win.gridwidth;
             }
             else if (oldwidth < win.gridwidth) {
                 lineobj.dirty = true;
@@ -3147,6 +3176,9 @@ function gli_window_rearrange(win, box) {
                     lineobj.chars[cx] = ' ';
                     lineobj.styles[cx] = Const.style_Normal;
                     lineobj.hyperlinks[cx] = 0;
+                    lineobj.fgs[cx] = null
+                    lineobj.bgs[cx] = null
+                    lineobj.reverses[cx] = 0
                 }
             }
         }
@@ -4326,7 +4358,7 @@ function glk_window_open(splitwin, method, size, wintype, rock) {
         break;
     case Const.wintype_TextGrid:
         /* lines is a list of line objects. A line looks like
-           { chars: [...], styles: [...], hyperlinks: [...], dirty: bool }.
+           { chars: [...], styles: [...], hyperlinks: [...], dirty: bool, fgs: [], bgs: [], reverses: [] }.
         */
         newwin.gridwidth = 0;
         newwin.gridheight = 0;
@@ -4626,6 +4658,9 @@ function glk_window_clear(win) {
                 lineobj.chars[cx] = ' ';
                 lineobj.styles[cx] = Const.style_Normal;
                 lineobj.hyperlinks[cx] = 0;
+                lineobj.fgs[cx] = win.fg;
+                lineobj.bgs[cx] = win.bg;
+                lineobj.reverses[cx] = win.reverse;
             }
         }
         break;

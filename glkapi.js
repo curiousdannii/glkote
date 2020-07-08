@@ -3166,8 +3166,8 @@ function gli_window_rearrange(win, box) {
                 lineobj.chars.length = win.gridwidth;
                 lineobj.styles.length = win.gridwidth;
                 lineobj.hyperlinks.length = win.gridwidth;
-                lineobj.fgs.length = win.gridwith;
-                lineobj.bgs.length = win.gridwith;
+                lineobj.fgs.length = win.gridwidth;
+                lineobj.bgs.length = win.gridwidth;
                 lineobj.reverses.length = win.gridwidth;
             }
             else if (oldwidth < win.gridwidth) {

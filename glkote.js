@@ -1777,6 +1777,11 @@ function add_window_styles(win, frameel) {
         par_props.push(`${prop}: ${stylehints[prop]}`)
       }
       else {
+        // If the whole style is reversed, then don't set colours here, set them below
+        if ((prop === 'color' || prop === 'background-color') && stylehints.reverse)
+        {
+          continue;
+        }
         span_props.push(`${prop}: ${stylehints[prop]}`)
       }
     }

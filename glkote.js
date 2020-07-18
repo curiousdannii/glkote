@@ -1241,6 +1241,10 @@ function accept_one_content(arg) {
         /* Create a new paragraph div */
         divel = $('<div>', { 'class': 'BufferLine' });
         divel.data('blankpara', true);
+        if (content && content[0])
+        {
+          divel.addClass('Style_' + (typeof content[0] === 'string' ? content[0] : content[0].style))
+        }
         win.frameel.append(divel);
       }
       if (textarg.flowbreak)
@@ -1414,7 +1418,7 @@ function accept_one_content(arg) {
           left: '0px', top: '0px', width: width+'px' });
 
         // Set colours and reverse from last input
-        if (win.lastrdesc)
+        if (win.lastrdesc && win.input.type === 'line')
         {
           const lastrdesc = win.lastrdesc
           inputel.toggleClass('reverse', !!lastrdesc.reverse)
@@ -1569,7 +1573,7 @@ function accept_inputset(arg) {
       win.needscroll = true;
 
       // Set colours and reverse from last input
-      if (win.lastrdesc)
+      if (win.lastrdesc && win.input.type === 'line')
       {
         const lastrdesc = win.lastrdesc
         inputel.toggleClass('reverse', !!lastrdesc.reverse)
@@ -1680,13 +1684,14 @@ function accept_specialinput(arg) {
    window. (jQuery-wrapped.) If none, return null.
 */
 function buffer_last_line(win) {
-  var divel = last_child_of(win.frameel); /* not wrapped */
-  if (divel == null)
+  var divel = $(last_child_of(win.frameel));
+  if (!divel.length)
     return null;
   /* If the sole child is the PreviousMark, there are no BufferLines. */
-  if (divel.className != 'BufferLine')
+  if (!divel.hasClass('BufferLine'))
     return null;
-  return $(divel);
+
+  return divel;
 }
 
 /* Return the vertical offset (relative to the parent) of the top of the 
@@ -1759,7 +1764,8 @@ function add_window_styles(win, frameel) {
   for (let style_number = 0; style_number < 11; style_number++)
   {
     const stylehints = win.stylehints[style_number]
-    let css_props = []
+    const par_props = []
+    const span_props = []
 
     for (const prop in stylehints)
     {
@@ -1767,11 +1773,19 @@ function add_window_styles(win, frameel) {
       {
         continue;
       }
-      css_props.push(`${prop}: ${stylehints[prop]}`)
+      if (prop === 'margin-left' || prop === 'text-align' || prop === 'text-indent') {
+        par_props.push(`${prop}: ${stylehints[prop]}`)
+      }
+      else {
+        span_props.push(`${prop}: ${stylehints[prop]}`)
+      }
     }
 
-    if (css_props.length) {
-      css_rules.push(`#${windowid} .Style_${StyleNames[style_number]} {${css_props.join('; ')}}`)
+    if (par_props.length) {
+      css_rules.push(`#${windowid} div.Style_${StyleNames[style_number]} {${par_props.join('; ')}}`)
+    }
+    if (span_props.length) {
+      css_rules.push(`#${windowid} span.Style_${StyleNames[style_number]} {${span_props.join('; ')}}`)
     }
 
     if (stylehints.color || stylehints['background-color'])
@@ -1785,7 +1799,7 @@ function add_window_styles(win, frameel) {
       {
         css_props.push(`color: ${stylehints['background-color']}`)
       }
-      css_rules.push(`#${windowid} .Style_${StyleNames[style_number]}.reverse {${css_props.join('; ')}}`)
+      css_rules.push(`#${windowid} span.Style_${StyleNames[style_number]}.reverse {${css_props.join('; ')}}`)
     }
   }
   if (win.stylehints[0]['background-color'])

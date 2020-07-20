@@ -1178,6 +1178,9 @@ function accept_one_content(arg) {
         }
       }
     }
+
+    // Apply the class of 'reverse' to the grid window if all the text in it is reversed
+    $(`#window${win.id}`).toggleClass('reverse', $(`#window${win.id} span:not(.reverse)`).length === 0)
   }
 
   if (win.type == 'buffer') {
@@ -1809,7 +1812,10 @@ function add_window_styles(win, frameel) {
   }
   if (win.stylehints[0]['background-color'])
   {
-    css_rules.push(`#${windowid} {background-color: ${win.stylehints[0]['background-color']}}`)
+    css_rules.push(
+      `#${windowid} {background-color: ${win.stylehints[0]['background-color']}}`,
+      `#${windowid}.reverse {background-color: ${win.stylehints[0]['color'] || 'var(--glkote-grid-reverse-bg)'}}`
+    )
   }
 
   if (css_rules.length)

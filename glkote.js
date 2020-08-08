@@ -1140,7 +1140,7 @@ function accept_one_content(arg) {
             rtext = content[sx];
             rlink = undefined;
           }
-          reverse = reverse || win.stylehints[StyleNamesToCode[rstyle]].reverse
+          reverse = reverse || (win.stylehints && win.stylehints[StyleNamesToCode[rstyle]].reverse)
 
           let classname = 'Style_' + rstyle
           if (reverse)
@@ -1333,7 +1333,7 @@ function accept_one_content(arg) {
           rtext = content[sx];
           rlink = undefined;
         }
-        reverse = reverse || win.stylehints[StyleNamesToCode[rstyle]].reverse
+        reverse = reverse || (win.stylehints && win.stylehints[StyleNamesToCode[rstyle]].reverse)
 
         let classname = 'Style_' + rstyle
         if (reverse)

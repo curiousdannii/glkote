@@ -670,6 +670,12 @@ function update() {
         dataobj.disable = true;
     }
 
+    // Send a live-updated bage background colour
+    if (stylehints.buffer[0]['background-color'])
+    {
+        dataobj.page_bg = stylehints.buffer[0]['background-color']
+    }
+
     /* Clean this up; it's only meaningful within one run/update cycle. */
     current_partial_outputs = null;
 

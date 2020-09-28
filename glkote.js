@@ -158,6 +158,8 @@ const StyleNamesToCode = {
   user2: 10,
 }
 
+const page_body = $('body')
+
 /* This function becomes GlkOte.init(). The document calls this to begin
    the game. The simplest way to do this is to give the <body> tag an
    onLoad="GlkOte.init();" attribute.
@@ -841,6 +843,12 @@ function glkote_update(arg) {
       current_metrics.width += 2;
       evhan_doc_resize();
     }
+  }
+
+  // Page background colour
+  if (arg.page_bg)
+  {
+    page_body.css('background-color', arg.page_bg)
   }
 
   /* Done with the update. Exit and wait for the next input event. */

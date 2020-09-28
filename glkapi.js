@@ -718,7 +718,8 @@ function save_allstate() {
     for (var win = gli_windowlist; win; win = win.next) {
         var obj = {
             type: win.type, rock: win.rock, disprock: win.disprock,
-            style: win.style, hyperlink: win.hyperlink
+            style: win.style, hyperlink: win.hyperlink,
+            bg: win.bg, fg: win.fg, reverse: win.reverse,
         };
         if (win.parent)
             obj.parent = win.parent.disprock;
@@ -754,6 +755,7 @@ function save_allstate() {
         switch (win.type) {
         case Const.wintype_TextBuffer:
             obj.reserve = win.reserve.slice(0);
+            obj.stylehints = win.stylehints
             break;
         case Const.wintype_TextGrid:
             obj.gridwidth = win.gridwidth;
@@ -772,6 +774,7 @@ function save_allstate() {
             }
             obj.cursorx = win.cursorx;
             obj.cursory = win.cursory;
+            obj.stylehints = win.stylehints
             break;
         case Const.wintype_Graphics:
             obj.graphwidth = win.graphwidth;
@@ -872,6 +875,9 @@ function save_allstate() {
 
     // Ignore gli_schannellist, as it's currently always empty.
 
+    // Save the in-progress stylehints
+    res.stylehints = stylehints;
+
     /* Save GlkOte-level information. This includes the overall metrics. */
     res.glkote = GlkOte.save_allstate();
 
@@ -893,7 +899,8 @@ function restore_allstate(res)
         const obj = res.windows[ix];
         const win = {
             type: obj.type, rock: obj.rock, disprock: obj.disprock,
-            style: obj.style, hyperlink: obj.hyperlink
+            style: obj.style, hyperlink: obj.hyperlink,
+            bg: obj.bg, fg: obj.fg, reverse: obj.reverse,
         };
         GiDispa.class_register('window', win, win.disprock);
 
@@ -984,6 +991,7 @@ function restore_allstate(res)
             win.content = obj.reserve.slice(0);
             win.clearcontent = false;
             win.reserve = [];
+            win.stylehints = obj.stylehints;
             break;
         case Const.wintype_TextGrid:
             win.gridwidth = obj.gridwidth;
@@ -1003,6 +1011,7 @@ function restore_allstate(res)
             }
             win.cursorx = obj.cursorx;
             win.cursory = obj.cursory;
+            win.stylehints = obj.stylehints;
             break;
         case Const.wintype_Graphics:
             win.graphwidth = obj.graphwidth;
@@ -1134,6 +1143,8 @@ function restore_allstate(res)
 
     if (res.timer_interval)
         glk_request_timer_events(res.timer_interval);
+
+    stylehints = res.stylehints;
 
     /* Stash this for the next (first) GlkOte.update call. */
     gli_autorestore_glkstate = res.glkote;

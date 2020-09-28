@@ -1794,6 +1794,11 @@ function add_window_styles(win, frameel) {
     }
     if (span_props.length) {
       css_rules.push(`#${windowid} span.Style_${StyleNames[style_number]} {${span_props.join('; ')}}`)
+      // Also output styles for the <input>
+      // May not place nice with reverse!
+      if (style_number === 8) {
+        css_rules.push(`#${windowid} input.LineInput {${span_props.join('; ')}}`)
+      }
     }
 
     if (stylehints.color || stylehints['background-color'])

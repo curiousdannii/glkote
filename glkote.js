@@ -846,7 +846,7 @@ function glkote_update(arg) {
   }
 
   // Page background colour
-  if (arg.page_bg)
+  if (typeof arg.page_bg !== 'undefined')
   {
     page_body.css('background-color', arg.page_bg)
   }
@@ -1031,6 +1031,9 @@ function accept_one_window(arg) {
     }
   }
 
+  // Set window background, usually this path will be followed after an autorestore
+  refresh_cleared_styles(win, arg.bg, arg.fg)
+
   /* The trick is that left/right/top/bottom are measured to the outside
      of the border, but width/height are measured from the inside of the
      border. (Measured by the browser's DOM methods, I mean.) */
@@ -1110,6 +1113,11 @@ function accept_one_content(arg) {
   win.needscroll = true;
 
   if (win.type == 'grid') {
+    if (arg.clear)
+    {
+      refresh_cleared_styles(win, arg.bg, arg.fg)
+    }
+
     /* Modify the given lines of the grid window (and leave the rest alone). */
     var lines = arg.lines;
     for (let ix=0; ix<lines.length; ix++) {
@@ -1213,13 +1221,7 @@ function accept_one_content(arg) {
       win.topunseen = 0;
       win.pagefrommark = 0;
       win.lastrdesc = null
-      if (win.stylehints) {
-        if (arg['background-color'])
-        {
-          win.stylehints[0]['background-color'] = arg['background-color']
-        }
-        add_window_styles(win, win.frameel);
-      }
+      refresh_cleared_styles(win, arg.bg, arg.fg)
     }
 
     /* Accept a missing text field as doing nothing. */
@@ -1823,17 +1825,43 @@ function add_window_styles(win, frameel) {
       css_rules.push(`#${windowid} span.Style_${StyleNames[style_number]}.reverse {${css_props.join('; ')}}`)
     }
   }
-  if (win.stylehints[0]['background-color'])
+
+  // Set window background colour
+  if (win.stylehints.win_bg || win.stylehints.win_fg ||win.stylehints[0]['background-color'])
   {
     css_rules.push(
-      `#${windowid} {background-color: ${win.stylehints[0]['background-color']}}`,
-      `#${windowid}.reverse {background-color: ${win.stylehints[0]['color'] || 'var(--glkote-grid-reverse-bg)'}}`
+      `#${windowid} {background-color: ${win.stylehints.win_bg || win.stylehints[0]['background-color'] || `var(--glkote-${win.type}-bg)`}}`,
+      `#${windowid}.reverse {background-color: ${win.stylehints.win_fg ||win.stylehints[0]['color'] || `var(--glkote-${win.type}-reverse-bg)`}}`
     )
   }
 
   if (css_rules.length)
   {
-    frameel.append(`<style>${css_rules.join('\n')}</style>`)
+    frameel.children('style').remove()
+    frameel.prepend(`<style>${css_rules.join('\n')}</style>`)
+  }
+}
+
+// Refresh styles after a cleared window
+function refresh_cleared_styles(win, bg, fg)
+{
+  if (win.stylehints)
+  {
+    let styles_need_refreshing
+    if (typeof bg !== undefined)
+    {
+      win.stylehints.win_bg = bg
+      styles_need_refreshing = 1
+    }
+    if (typeof fg !== undefined)
+    {
+      win.stylehints.win_fg = fg
+      styles_need_refreshing = 1
+    }
+    if (styles_need_refreshing)
+    {
+      add_window_styles(win, win.frameel)
+    }
   }
 }
 

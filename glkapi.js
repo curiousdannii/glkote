@@ -447,13 +447,17 @@ function update() {
             switch (win.type) {
             case Const.wintype_TextBuffer:
                 obj.type = 'buffer';
-                obj.stylehints = win.stylehints
+                obj.stylehints = clone_stylehints(win.stylehints)
+                obj.bg = win.cleared_bg
+                obj.fg = win.cleared_fg
                 break;
             case Const.wintype_TextGrid:
                 obj.type = 'grid';
                 obj.gridwidth = win.gridwidth;
                 obj.gridheight = win.gridheight;
-                obj.stylehints = win.stylehints
+                obj.stylehints = clone_stylehints(win.stylehints)
+                obj.bg = win.cleared_bg
+                obj.fg = win.cleared_fg
                 break;
             case Const.wintype_Graphics:
                 obj.type = 'graphics';
@@ -485,10 +489,8 @@ function update() {
             }
             if (win.clearcontent) {
                 obj.clear = true;
-                if (win.bg)
-                {
-                    obj['background-color'] = win.bg;
-                }
+                obj.bg = win.cleared_bg;
+                obj.fg = win.cleared_fg;
                 win.clearcontent = false;
                 useobj = true;
                 if (!obj.text) {
@@ -551,6 +553,12 @@ function update() {
                     }
                 }
                 obj.lines.push({ line:ix, content:ls });
+            }
+            if (win.clearcontent) {
+                obj.clear = true;
+                obj.bg = win.cleared_bg;
+                obj.fg = win.cleared_fg;
+                win.clearcontent = false;
             }
             useobj = obj.lines.length;
             break;
@@ -671,9 +679,10 @@ function update() {
     }
 
     // Send a live-updated bage background colour
-    if (stylehints.buffer[0]['background-color'])
+    if (last_page_bg != stylehints.buffer[0]['background-color'])
     {
-        dataobj.page_bg = stylehints.buffer[0]['background-color']
+        last_page_bg = stylehints.buffer[0]['background-color']
+        dataobj.page_bg = stylehints.buffer[0]['background-color'] || ''
     }
 
     /* Clean this up; it's only meaningful within one run/update cycle. */
@@ -726,6 +735,7 @@ function save_allstate() {
             type: win.type, rock: win.rock, disprock: win.disprock,
             style: win.style, hyperlink: win.hyperlink,
             bg: win.bg, fg: win.fg, reverse: win.reverse,
+            cleared_bg: win.cleared_bg, cleared_fg: win.cleared_fg,
         };
         if (win.parent)
             obj.parent = win.parent.disprock;
@@ -907,6 +917,7 @@ function restore_allstate(res)
             type: obj.type, rock: obj.rock, disprock: obj.disprock,
             style: obj.style, hyperlink: obj.hyperlink,
             bg: obj.bg, fg: obj.fg, reverse: obj.reverse,
+            cleared_bg: obj.cleared_bg, cleared_fg: obj.cleared_fg,
         };
         GiDispa.class_register('window', win, win.disprock);
 
@@ -1017,6 +1028,7 @@ function restore_allstate(res)
             }
             win.cursorx = obj.cursorx;
             win.cursory = obj.cursory;
+            win.clearcontent = false;
             win.stylehints = obj.stylehints;
             break;
         case Const.wintype_Graphics:
@@ -4367,11 +4379,7 @@ function glk_window_open(splitwin, method, size, wintype, rock) {
         newwin.content = [];
         newwin.clearcontent = false;
         newwin.reserve = []; /* autosave of recent content */
-        newwin.stylehints = []
-        for (let i = 0; i < Const.style_NUMSTYLES; i++)
-        {
-            newwin.stylehints.push(Object.assign({}, stylehints.buffer[i]))
-        }
+        newwin.stylehints = clone_stylehints(stylehints.buffer)
         break;
     case Const.wintype_TextGrid:
         /* lines is a list of line objects. A line looks like
@@ -4382,11 +4390,8 @@ function glk_window_open(splitwin, method, size, wintype, rock) {
         newwin.lines = [];
         newwin.cursorx = 0;
         newwin.cursory = 0;
-        newwin.stylehints = []
-        for (let i = 0; i < Const.style_NUMSTYLES; i++)
-        {
-            newwin.stylehints.push(Object.assign({}, stylehints.grid[i]))
-        }
+        newwin.clearcontent = false;
+        newwin.stylehints = clone_stylehints(stylehints.grid)
         break;
     case Const.wintype_Graphics:
         if (!support.graphics) {
@@ -4664,6 +4669,8 @@ function glk_window_clear(win) {
         win.accum_reverse = null
         win.content.length = 0;
         win.clearcontent = true;
+        win.cleared_bg = win.bg
+        win.cleared_fg = win.fg
         break;
     case Const.wintype_TextGrid:
         win.cursorx = 0;
@@ -4680,6 +4687,9 @@ function glk_window_clear(win) {
                 lineobj.reverses[cx] = win.reverse;
             }
         }
+        win.clearcontent = true;
+        win.cleared_bg = win.bg
+        win.cleared_fg = win.fg
         break;
     case Const.wintype_Graphics:
         /* If the background color has been set, we must retain that entry.
@@ -5230,6 +5240,7 @@ function glk_char_to_upper(val) {
 
 /* Style hints */
 
+var last_page_bg = null
 var stylehints = {
     buffer: [],
     grid: [],
@@ -5239,6 +5250,16 @@ for (let i = 0; i < Const.style_NUMSTYLES; i++)
 {
     stylehints.buffer.push({})
     stylehints.grid.push({})
+}
+
+function clone_stylehints(stylehints)
+{
+    const newstylehints = []
+    for (let i = 0; i < Const.style_NUMSTYLES; i++)
+    {
+        newstylehints.push(Object.assign({}, stylehints[i]))
+    }
+    return newstylehints
 }
 
 var stylehint_properties = ['margin-left', 'text-indent', 'text-align', 'font-size', 'font-weight', 'font-style', 'font-family', 'color', 'background-color', 'reverse']
